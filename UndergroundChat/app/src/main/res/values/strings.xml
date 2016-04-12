@@ -1,0 +1,15 @@
+<resources>
+    <!--Strings related to MainActivity-->
+    <string name="app_name">UndergroundChat</string>
+    <string name="title_activity_main">Underground Chat</string>
+    <string name="message_default_text">Type in your message here</string>
+    <string name="send_button_text">Send</string>
+    <string name="chatting_with">Chatting with:</string>
+    <string name="title_activity_login">Sign in</string>
+    <!--String Related to LoginActivity-->
+    <string name="enter_username">Enter username</string>
+    <string name="enter_password">Enter password</string>
+    <string name="domain_login">Log In to gordon.com</string>
+    <string name="login">Login</string>
+
+</resources>
