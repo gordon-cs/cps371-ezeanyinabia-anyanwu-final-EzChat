@@ -11,5 +11,7 @@
     <string name="enter_password">Enter password</string>
     <string name="domain_login">Log In to gordon.com</string>
     <string name="login">Login</string>
+    <!--Related to ContactsActicity-->
+    <string name="friends">Friends:</string>
 
 </resources>
