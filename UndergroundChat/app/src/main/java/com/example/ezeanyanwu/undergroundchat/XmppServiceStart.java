@@ -4,6 +4,7 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.content.Context;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -21,8 +22,11 @@ import org.jivesoftware.smack.chat.ChatMessageListener;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.filter.StanzaFilter;
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.roster.Roster;
+import org.jivesoftware.smack.roster.RosterEntry;
+import org.jivesoftware.smack.roster.RosterListener;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.muc.InvitationListener;
@@ -30,7 +34,10 @@ import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.jivesoftware.smackx.muc.MultiUserChatManager;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -48,8 +55,9 @@ public class XmppServiceStart extends IntentService {
     private Roster theRoster;
 
     /* Variables to keep track of ongoing chats */
-    private List<String> chatList = new ArrayList<>();
+    //private List<String> chatList = new ArrayList<>();
     private List<String> muChatList = new ArrayList<>();
+    private HashMap<String, String> chatList = new HashMap<>();
     private String mostRecentMuChat = "0";
     private String mostRecentChat = "0";
 
@@ -80,9 +88,10 @@ public class XmppServiceStart extends IntentService {
         password = intent.getStringExtra("PASSWORD");
 
         theConnection = connectToServer(username, password);
+        theRoster = setupRoster();
         theChatManager = startListeningForChats();
         theMUChatManager = startListeningForMUChats();
-        //theRoster = Roster.getInstanceFor(theConnection);
+
         //Roster.setDefaultSubscriptionMode(Roster.SubscriptionMode.accept_all);
 
     }
@@ -128,6 +137,7 @@ public class XmppServiceStart extends IntentService {
         }
 
         Log.d("Connected:", "Hey! We are connected!");
+
 
         /* Attempt to login, throw exceptions if not able to */
         try {
@@ -199,13 +209,96 @@ public class XmppServiceStart extends IntentService {
         );
         return chatmanager;
     }
+    /* Function to setup roster and listen for incoming roster requests */
+    public Roster setupRoster()
+    {
+        Roster roster = Roster.getInstanceFor(theConnection);
+        Roster.setDefaultSubscriptionMode(Roster.SubscriptionMode.accept_all);
+        if(!roster.isLoaded())
+        {
+            try {
+                roster.reloadAndWait();
+            } catch (SmackException.NotLoggedInException e) {
+                e.printStackTrace();
+            } catch (SmackException.NotConnectedException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
 
 
+        Collection<RosterEntry> rosterEntries = roster.getEntries();
+        String[] usernames = new String[rosterEntries.size()];
+        int size = rosterEntries.size();
+        int counter = 0;
+
+        for(RosterEntry entry: rosterEntries )
+        {
+            String user = entry.getUser();
+            Log.d("ROSTER:", user);
+            usernames[counter] = user;
+            counter++;
+        }
+
+        Intent rosterIntent = new Intent("Initial-Roster-List");
+        rosterIntent.putExtra("ROSTER", usernames);
+        LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
+
+        Log.d("ROSTER:","ROSTER has been setup");
+        roster.addRosterListener(new RosterListener() {
+            @Override
+            public void entriesAdded(Collection<String> addresses) {
+                int size = addresses.size();
+                String[] usernames = new String[size];
+                int counter = 0;
+
+                for(String user: addresses )
+                {
+                    Log.d("ROSTER:", user);
+                    usernames[counter] = user;
+                    counter++;
+                }
+                Intent rosterIntent = new Intent("Add-Roster-List");
+                rosterIntent.putExtra("ROSTER", usernames);
+                LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
+            }
+            @Override
+            public void entriesUpdated(Collection<String> addresses) {
+                Log.d("ROSTER2:","Presence changed: " );
+            }
+
+            @Override
+            public void entriesDeleted(Collection<String> addresses) {
+                int size = addresses.size();
+                String[] usernames = new String[size];
+                int counter = 0;
+
+                for(String user: addresses )
+                {
+                    Log.d("ROSTER:", user);
+                    usernames[counter] = user;
+                    counter++;
+                }
+                Intent rosterIntent = new Intent("Delete-Roster-List");
+                rosterIntent.putExtra("ROSTER", usernames);
+                LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
+            }
+
+            @Override
+            public void presenceChanged(Presence presence) {
+                Log.d("ROSTER4:","Presence changed: " + presence.getFrom() + " " + presence);
+            }
+        });
+
+        return roster;
+    }
     /* Convenience method to send message */
     /* NOT FINISHED YET */
-    public void sendChat(String text)
+    public void sendChat(String text, String threadID)
     {
-        Chat chat = theChatManager.getThreadChat(mostRecentChat);
+
+        Chat chat = theChatManager.getThreadChat(threadID);
         try {
             chat.sendMessage(text);
         } catch (SmackException.NotConnectedException e) {
@@ -213,6 +306,22 @@ public class XmppServiceStart extends IntentService {
         }
     }
 
+    public String getChat(String username)
+    {
+        String thread = "";
+        if ( chatList.containsKey(username))
+        {
+            thread = chatList.get(username);
+            //Chat chat = theChatManager.getThreadChat(thread);
+        }
+        else
+        {
+           Chat chat = theChatManager.createChat(username);
+            chat.addMessageListener(new ChatMessageListener());
+            thread = chat.getThreadID();
+        }
+        return thread;
+    }
     /* Setters and Getters */
     public XMPPConnection getConnection()
     {
@@ -233,18 +342,17 @@ public class XmppServiceStart extends IntentService {
         @Override
         public void processMessage(Chat chat, Message message)
         {
-            if( chatList == null || !chatList.contains(chat.getThreadID()) )
+            if( chatList.isEmpty() || !chatList.containsKey(chat.getParticipant()))
             {
-                chatList.add(chat.getThreadID());
-                Log.d("NEWCHAT: ", chat.getThreadID());
+                chatList.put(chat.getParticipant(), chat.getThreadID());
+                Log.d("NEWCHAT: ", chat.getParticipant() + " " + chat.getThreadID());
             }
 
             if((message.getType() == Message.Type.chat || message.getType() == Message.Type.groupchat) && hasBody(message))
             {
-                mostRecentChat = chat.getThreadID();
-                String from = chat.getParticipant().toString();
+                String from = chat.getParticipant();
                 String text = message.getBody().toString();
-//                Log.d("NEW CHAT:", from + ":" + text);
+                Log.d("NEW CHAT:", from + ":" + text);
                 Intent intent = new Intent("Message-Received");
                 intent.putExtra("FROM", from);
                 intent.putExtra("TEXT", text);

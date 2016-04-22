@@ -51,8 +51,9 @@ public class LoginActivity extends AppCompatActivity {
             Intent intent = new Intent(LoginActivity.this, XmppServiceStart.class);
             intent.putExtra("USERNAME", username);
             intent.putExtra("PASSWORD", password);
-            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
             startService(intent);
+            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+
         }
     };
 
@@ -65,8 +66,10 @@ public class LoginActivity extends AppCompatActivity {
 
             XmppServiceStart.LocalBinder binder = (XmppServiceStart.LocalBinder) service;
             myService = binder.getService();
-            Intent mainActivityIntent = new Intent(LoginActivity.this, MainActivity.class);
-            startActivity(mainActivityIntent);
+//            Intent mainActivityIntent = new Intent(LoginActivity.this, MainActivity.class);
+//            startActivity(mainActivityIntent);
+            Intent contactsActivityIntent = new Intent(LoginActivity.this, ContactsActivity.class);
+            startActivity(contactsActivityIntent);
 
         }
 

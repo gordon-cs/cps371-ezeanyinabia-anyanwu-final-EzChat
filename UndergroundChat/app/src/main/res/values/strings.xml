@@ -13,5 +13,9 @@
     <string name="login">Login</string>
     <!--Related to ContactsActicity-->
     <string name="friends">Friends:</string>
+    <string name="title_activity_contacts">Contacts</string>
+    <string name="add_friend">Add Friend</string>
+    <string name="add_friend_option">Add</string>
+    <string name="cancel">Cancel</string>
 
 </resources>

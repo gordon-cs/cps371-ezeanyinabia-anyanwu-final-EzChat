@@ -32,7 +32,7 @@
     <EditText android:id="@+id/chat_edittext"
         android:layout_width="match_parent"
         android:layout_height="40dp"
-        android:hint="@string/message_default_text"/>
+        android:hint="@string/message_default_text" />
 
     <Button android:id="@+id/chat_send_button"
         android:layout_width="wrap_content"

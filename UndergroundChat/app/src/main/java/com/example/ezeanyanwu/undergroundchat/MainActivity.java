@@ -51,6 +51,9 @@ public class MainActivity extends AppCompatActivity {
     XMPPConnection myConnection;
     ChatManager myChatManager;
     Roster myRoster;
+
+    String currentUsername;
+
     boolean isBound = false;
 
     @Override
@@ -71,6 +74,12 @@ public class MainActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(myIMListener, new IntentFilter("Message-Received"));
     }
 
+    @Override
+    public void onDestroy()
+    {
+        unbindService(mConnection);
+        super.onDestroy();
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -98,6 +107,9 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, XmppServiceStart.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 
+        Intent creator = getIntent();
+        currentUsername = creator.getStringExtra("USERNAME");
+
 
     }
 
@@ -109,11 +121,14 @@ public class MainActivity extends AppCompatActivity {
 
             String from = intent.getStringExtra("FROM");
             String text = intent.getStringExtra("TEXT");
-            chatDestination.setText(from);
-            String updateString = from + ": " + text + "\n";
-            mChatList.add(updateString);
-            mArrayAdapter.notifyDataSetChanged();
-            chatListview.setSelection(mArrayAdapter.getCount() - 1);
+            if ( from.equals(currentUsername) )
+            {
+                chatDestination.setText(from);
+                String updateString = from + ": " + text + "\n";
+                mChatList.add(updateString);
+                mArrayAdapter.notifyDataSetChanged();
+                chatListview.setSelection(mArrayAdapter.getCount() - 1);
+            }
         }
     };
 
@@ -146,8 +161,9 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View v) {
             String text = chatEditWindow.getText().toString();
             chatEditWindow.setText("");
-            myService.sendChat(text);
-            String updateString = "eze@suhdude.com: " + text + "\n";
+            String threadID = myService.getChat(currentUsername);
+            myService.sendChat(text, threadID);
+            String updateString = "eze@gordon.com: " + text + "\n";
             mChatList.add(updateString);
             mArrayAdapter.notifyDataSetChanged();
             chatListview.setSelection(mArrayAdapter.getCount() - 1);
