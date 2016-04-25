@@ -26,6 +26,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 
 import org.jivesoftware.smack.XMPPConnection;
@@ -45,11 +46,13 @@ public class ContactsActivity extends AppCompatActivity {
     ArrayList contactsArrayList = new ArrayList();
 
 
-    XmppServiceStart myService;
+    static XmppServiceStart myService;
     XMPPConnection myConnection;
     ChatManager myChatManager;
     Roster myRoster;
     boolean isBound = false;
+
+    public String userToAdd = "";
 
     @Override
     public void onResume()
@@ -187,14 +190,17 @@ public class ContactsActivity extends AppCompatActivity {
         {
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
             LayoutInflater inflater = getActivity().getLayoutInflater();
-
+            View promptView = inflater.inflate(R.layout.dialog_addfriend,null);
             Log.d("DIALOG:", "My dialog created!");
-            builder.setView(inflater.inflate(R.layout.dialog_addfriend,null));
+            builder.setView(promptView);
+            final EditText input = (EditText) promptView.findViewById(R.id.new_friend);
             builder.setPositiveButton(R.string.add_friend_option, new DialogInterface.OnClickListener()
             {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    Log.d("DIALOG:", "My dialog created!");
+                    String address = input.getText().toString();
+                    Log.d("DIALOG:", "My dialog created!" + address);
+                    myService.addFriend(address);
 
                 }
             });

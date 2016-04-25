@@ -13,6 +13,7 @@ import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.chat.Chat;
@@ -21,6 +22,7 @@ import org.jivesoftware.smack.chat.ChatManagerListener;
 import org.jivesoftware.smack.chat.ChatMessageListener;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.filter.StanzaFilter;
+import org.jivesoftware.smack.filter.StanzaTypeFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
@@ -29,9 +31,11 @@ import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.roster.RosterListener;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.jivesoftware.smackx.bytestreams.ibb.InBandBytestreamManager;
 import org.jivesoftware.smackx.muc.InvitationListener;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.jivesoftware.smackx.muc.MultiUserChatManager;
+import org.jivesoftware.smack.filter.StanzaFilter;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -244,45 +248,72 @@ public class XmppServiceStart extends IntentService {
         Intent rosterIntent = new Intent("Initial-Roster-List");
         rosterIntent.putExtra("ROSTER", usernames);
         LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
-
         Log.d("ROSTER:","ROSTER has been setup");
+
+        theConnection.addAsyncStanzaListener(new StanzaListener() {
+            @Override
+            public void processPacket(Stanza packet) throws SmackException.NotConnectedException {
+                Log.d("THEXML:", packet.toXML().toString());
+                Presence prez = (Presence) packet;
+                String presenceType = prez.getType().toString();
+                String from = prez.getFrom();
+                String usernames[] = new String[1];
+                Log.d("Presence:", presenceType);
+                if(presenceType.equals("unsubscribe"))
+                {
+                    usernames[0] = from;
+                    Intent rosterIntent = new Intent("Delete-Roster-List");
+                    rosterIntent.putExtra("ROSTER", usernames);
+                    LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
+                }
+                else if(presenceType.equals("subscribe"))
+                {
+                    usernames[0] = from;
+                    Intent rosterIntent = new Intent("Add-Roster-List");
+                    rosterIntent.putExtra("ROSTER", usernames);
+                    LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
+                }
+            }
+        }, StanzaTypeFilter.PRESENCE);
+
         roster.addRosterListener(new RosterListener() {
             @Override
             public void entriesAdded(Collection<String> addresses) {
-                int size = addresses.size();
-                String[] usernames = new String[size];
-                int counter = 0;
-
-                for(String user: addresses )
-                {
-                    Log.d("ROSTER:", user);
-                    usernames[counter] = user;
-                    counter++;
-                }
-                Intent rosterIntent = new Intent("Add-Roster-List");
-                rosterIntent.putExtra("ROSTER", usernames);
-                LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
+//                int size = addresses.size();
+//                String[] usernames = new String[size];
+//                int counter = 0;
+//
+//                for(String user: addresses )
+//                {
+//                    Log.d("ROSTER:", user);
+//                    usernames[counter] = user;
+//                    counter++;
+//                }
+//                Intent rosterIntent = new Intent("Add-Roster-List");
+//                rosterIntent.putExtra("ROSTER", usernames);
+//                LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
             }
             @Override
             public void entriesUpdated(Collection<String> addresses) {
-                Log.d("ROSTER2:","Presence changed: " );
+
+
             }
 
             @Override
             public void entriesDeleted(Collection<String> addresses) {
-                int size = addresses.size();
-                String[] usernames = new String[size];
-                int counter = 0;
-
-                for(String user: addresses )
-                {
-                    Log.d("ROSTER:", user);
-                    usernames[counter] = user;
-                    counter++;
-                }
-                Intent rosterIntent = new Intent("Delete-Roster-List");
-                rosterIntent.putExtra("ROSTER", usernames);
-                LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
+//                int size = addresses.size();
+//                String[] usernames = new String[size];
+//                int counter = 0;
+//
+//                for(String user: addresses )
+//                {
+//                    Log.d("ROSTER:", user);
+//                    usernames[counter] = user;
+//                    counter++;
+//                }
+//                Intent rosterIntent = new Intent("Delete-Roster-List");
+//                rosterIntent.putExtra("ROSTER", usernames);
+//                LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
             }
 
             @Override
@@ -292,6 +323,10 @@ public class XmppServiceStart extends IntentService {
         });
 
         return roster;
+    }
+    public void addFriend(String userID)
+    {
+
     }
     /* Convenience method to send message */
     /* NOT FINISHED YET */
