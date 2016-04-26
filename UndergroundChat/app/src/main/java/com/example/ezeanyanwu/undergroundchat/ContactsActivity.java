@@ -18,6 +18,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Layout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -53,6 +54,7 @@ public class ContactsActivity extends AppCompatActivity {
     boolean isBound = false;
 
     public String userToAdd = "";
+    public String userToDelete = "";
 
     @Override
     public void onResume()
@@ -96,8 +98,12 @@ public class ContactsActivity extends AppCompatActivity {
         {
             case R.id.add_contact:
                 // User chose to add a friend
-                DialogFragment dialog = new AddFriendDialogFragment();
-                dialog.show(getSupportFragmentManager(), "add_friend");
+                DialogFragment dialog1 = new AddFriendDialogFragment();
+                dialog1.show(getSupportFragmentManager(), "add_friend");
+                return true;
+            case R.id.remove_contact:
+                DialogFragment dialog2 = new DeleteFriendDialogFragment();
+                dialog2.show(getSupportFragmentManager(), "remove_friend");
                 return true;
             default:
                 // If we got here, the user's action was not recognized.
@@ -151,6 +157,7 @@ public class ContactsActivity extends AppCompatActivity {
                 if(!contactsArrayList.contains(user))
                 {
                     contactsArrayList.add(user);
+                    myService.addFriend(user);
                 }
             }
             contactsArrayAdapter.notifyDataSetChanged();
@@ -164,9 +171,12 @@ public class ContactsActivity extends AppCompatActivity {
             for(String user: usernames)
             {
                 int i = contactsArrayList.indexOf(user);
-                if(i != 0)
+                if(contactsArrayList.contains(user))
                 {
+
                     contactsArrayList.remove(i);
+                    myService.deleteFriend(user);
+
                 }
             }
             contactsArrayAdapter.notifyDataSetChanged();
@@ -198,9 +208,13 @@ public class ContactsActivity extends AppCompatActivity {
             {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    String address = input.getText().toString();
-                    Log.d("DIALOG:", "My dialog created!" + address);
-                    myService.addFriend(address);
+                    String usernames[] = new String[1];
+                    usernames[0] = input.getText().toString();
+                    Log.d("DIALOG:", "My dialog created!" + usernames[0]);
+                    Intent rosterIntent = new Intent("Add-Roster-List");
+                    rosterIntent.putExtra("ROSTER", usernames);
+                    LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(rosterIntent);
+
 
                 }
             });
@@ -213,6 +227,38 @@ public class ContactsActivity extends AppCompatActivity {
             });
             return builder.create();
 
+        }
+    }
+
+    public static class DeleteFriendDialogFragment extends DialogFragment
+    {
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState)
+        {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            LayoutInflater inflater= getActivity().getLayoutInflater();
+            View promptView = inflater.inflate(R.layout.dialog_deletefriend, null);
+            Log.d("DIALOG:", "My dialog created!");
+            builder.setView(promptView);
+            final EditText input = (EditText) promptView.findViewById(R.id.remove_friend_name);
+            builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    String usernames[] = new String[1];
+                    usernames[0] = input.getText().toString();
+                    Log.d("DIALOG:", "My dialog created!" + usernames[0]);
+                    Intent rosterIntent = new Intent("Delete-Roster-List");
+                    rosterIntent.putExtra("ROSTER", usernames);
+                    LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(rosterIntent);
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            });
+            return builder.create();
         }
     }
 }

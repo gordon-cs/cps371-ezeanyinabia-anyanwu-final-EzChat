@@ -23,6 +23,7 @@ import org.jivesoftware.smack.chat.ChatMessageListener;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.filter.StanzaFilter;
 import org.jivesoftware.smack.filter.StanzaTypeFilter;
+import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
@@ -31,6 +32,7 @@ import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.roster.RosterListener;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.jivesoftware.smack.util.XmlStringBuilder;
 import org.jivesoftware.smackx.bytestreams.ibb.InBandBytestreamManager;
 import org.jivesoftware.smackx.muc.InvitationListener;
 import org.jivesoftware.smackx.muc.MultiUserChat;
@@ -259,20 +261,27 @@ public class XmppServiceStart extends IntentService {
                 String from = prez.getFrom();
                 String usernames[] = new String[1];
                 Log.d("Presence:", presenceType);
-                if(presenceType.equals("unsubscribe"))
+
+                if(theRoster.getEntry(from) != null && presenceType.equals("unsubscribe"))
                 {
                     usernames[0] = from;
                     Intent rosterIntent = new Intent("Delete-Roster-List");
                     rosterIntent.putExtra("ROSTER", usernames);
                     LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
                 }
-                else if(presenceType.equals("subscribe"))
+                else if(theRoster.getEntry(from) == null && presenceType.equals("subscribe"))
                 {
                     usernames[0] = from;
                     Intent rosterIntent = new Intent("Add-Roster-List");
                     rosterIntent.putExtra("ROSTER", usernames);
                     LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
                 }
+
+                if(theRoster.getEntry(from) != null && presenceType.equals("Available"))
+                {
+
+                }
+
             }
         }, StanzaTypeFilter.PRESENCE);
 
@@ -326,6 +335,37 @@ public class XmppServiceStart extends IntentService {
     }
     public void addFriend(String userID)
     {
+        try {
+            theRoster.createEntry(userID,userID,null);
+        } catch (SmackException.NotLoggedInException e) {
+            e.printStackTrace();
+        } catch (SmackException.NoResponseException e) {
+            e.printStackTrace();
+        } catch (XMPPException.XMPPErrorException e) {
+            e.printStackTrace();
+        } catch (SmackException.NotConnectedException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void deleteFriend(String userID)
+    {
+        RosterEntry entry = theRoster.getEntry(userID);
+        if(entry != null)
+        {
+            try {
+                theRoster.removeEntry(entry);
+            } catch (SmackException.NotLoggedInException e) {
+                e.printStackTrace();
+            } catch (SmackException.NoResponseException e) {
+                e.printStackTrace();
+            } catch (XMPPException.XMPPErrorException e) {
+                e.printStackTrace();
+            } catch (SmackException.NotConnectedException e) {
+                e.printStackTrace();
+            }
+        }
 
     }
     /* Convenience method to send message */
