@@ -18,7 +18,7 @@
     <string name="add_friend_option">Add</string>
     <string name="cancel">Cancel</string>
     <string name="confirm_remove_friend">Please enter the name of the friend you want to remove:</string>
-    <string name="confirm_add_friend">Please enter the name of the friend you want to remove:</string>
+    <string name="confirm_add_friend">Please enter the name of the friend you want to add:</string>
     <string name="name_of_friend_to_remove">Remove Friend</string>
 
 </resources>

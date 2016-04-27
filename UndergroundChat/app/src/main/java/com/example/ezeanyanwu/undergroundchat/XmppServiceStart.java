@@ -258,7 +258,8 @@ public class XmppServiceStart extends IntentService {
                 Log.d("THEXML:", packet.toXML().toString());
                 Presence prez = (Presence) packet;
                 String presenceType = prez.getType().toString();
-                String from = prez.getFrom();
+                String[] split = prez.getFrom().split("/");
+                String from = split[0];
                 String usernames[] = new String[1];
                 Log.d("Presence:", presenceType);
 
@@ -288,19 +289,7 @@ public class XmppServiceStart extends IntentService {
         roster.addRosterListener(new RosterListener() {
             @Override
             public void entriesAdded(Collection<String> addresses) {
-//                int size = addresses.size();
-//                String[] usernames = new String[size];
-//                int counter = 0;
-//
-//                for(String user: addresses )
-//                {
-//                    Log.d("ROSTER:", user);
-//                    usernames[counter] = user;
-//                    counter++;
-//                }
-//                Intent rosterIntent = new Intent("Add-Roster-List");
-//                rosterIntent.putExtra("ROSTER", usernames);
-//                LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
+
             }
             @Override
             public void entriesUpdated(Collection<String> addresses) {
@@ -310,24 +299,20 @@ public class XmppServiceStart extends IntentService {
 
             @Override
             public void entriesDeleted(Collection<String> addresses) {
-//                int size = addresses.size();
-//                String[] usernames = new String[size];
-//                int counter = 0;
-//
-//                for(String user: addresses )
-//                {
-//                    Log.d("ROSTER:", user);
-//                    usernames[counter] = user;
-//                    counter++;
-//                }
-//                Intent rosterIntent = new Intent("Delete-Roster-List");
-//                rosterIntent.putExtra("ROSTER", usernames);
-//                LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
             }
 
             @Override
             public void presenceChanged(Presence presence) {
+                String[] prez = new String[3];
+                prez[0] = presence.getType().toString();
+                String[] split = presence.getFrom().split("/");
+                prez[1] = split[0];
+                prez[2] = presence.getStatus();
                 Log.d("ROSTER4:","Presence changed: " + presence.getFrom() + " " + presence);
+
+                Intent rosterIntent = new Intent("Presence-Changed");
+                rosterIntent.putExtra("PRESENCE", prez);
+                LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
             }
         });
 

@@ -43,8 +43,8 @@ public class ContactsActivity extends AppCompatActivity {
 
 
     ListView contactsListView;
-    ArrayAdapter contactsArrayAdapter;
-    ArrayList contactsArrayList = new ArrayList();
+    ContactsListAdapter contactsArrayAdapter;
+    ArrayList<SingleContactListing> contactsArrayList = new ArrayList();
 
 
     static XmppServiceStart myService;
@@ -63,6 +63,7 @@ public class ContactsActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(myInitialRosterListener, new IntentFilter("Initial-Roster-List"));
         LocalBroadcastManager.getInstance(this).registerReceiver(myAddRosterListener, new IntentFilter("Add-Roster-List"));
         LocalBroadcastManager.getInstance(this).registerReceiver(myDeleteRosterListener, new IntentFilter("Delete-Roster-List"));
+        LocalBroadcastManager.getInstance(this).registerReceiver(myPresenceChangedListener, new IntentFilter("Presence-Changed"));
     }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,7 +78,8 @@ public class ContactsActivity extends AppCompatActivity {
         Intent intent = new Intent(this, XmppServiceStart.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 
-        contactsArrayAdapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, contactsArrayList);
+        //contactsArrayAdapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, contactsArrayList);
+        contactsArrayAdapter = new ContactsListAdapter(this, contactsArrayList);
         contactsListView.setAdapter(contactsArrayAdapter);
         contactsListView.setOnItemClickListener(onContactsClick);
 
@@ -142,7 +144,8 @@ public class ContactsActivity extends AppCompatActivity {
             String[] usernames = intent.getStringArrayExtra("ROSTER");
             for(String user: usernames)
             {
-                contactsArrayList.add(user);
+                SingleContactListing contact = new SingleContactListing(user, "unavailable");
+                contactsArrayList.add(contact);
             }
             contactsArrayAdapter.notifyDataSetChanged();
         }
@@ -156,7 +159,8 @@ public class ContactsActivity extends AppCompatActivity {
             {
                 if(!contactsArrayList.contains(user))
                 {
-                    contactsArrayList.add(user);
+                    SingleContactListing contact = new SingleContactListing(user, "unavailable");
+                    contactsArrayList.add(contact);
                     myService.addFriend(user);
                 }
             }
@@ -170,8 +174,11 @@ public class ContactsActivity extends AppCompatActivity {
             String[] usernames = intent.getStringArrayExtra("ROSTER");
             for(String user: usernames)
             {
-                int i = contactsArrayList.indexOf(user);
-                if(contactsArrayList.contains(user))
+                SingleContactListing contact = new SingleContactListing(user, "");
+
+                int i = contactsArrayList.indexOf(contact);
+
+                if(i >= 0)
                 {
 
                     contactsArrayList.remove(i);
@@ -183,10 +190,29 @@ public class ContactsActivity extends AppCompatActivity {
         }
     };
 
+    private BroadcastReceiver myPresenceChangedListener = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String[] presence = intent.getStringArrayExtra("PRESENCE");
+            SingleContactListing contact = new SingleContactListing(presence[1], "");
+            int i = contactsArrayList.indexOf(contact);
+            Log.d("CHANGED1:", Integer.toString(i));
+            if (i >= 0)
+            {
+                Log.d("CHANGED:", presence[1]);
+                contact = contactsArrayList.get(i);
+                contact.presence = presence[0];
+                contactsArrayList.remove(i);
+                contactsArrayList.add(contact);
+            }
+            contactsArrayAdapter.notifyDataSetChanged();
+        }
+    };
+
     private AdapterView.OnItemClickListener onContactsClick = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            String username = contactsArrayList.get(position).toString();
+            String username = contactsArrayList.get(position).contactName;
             Intent intent = new Intent(ContactsActivity.this, MainActivity.class);
             intent.putExtra("USERNAME", username);
             startActivity(intent);
