@@ -11,7 +11,8 @@
         android:layout_marginLeft="4dp"
         android:layout_marginRight="4dp"
         android:layout_marginBottom="4dp"
-        android:text="@string/confirm_remove_friend"/>
+        android:text="@string/confirm_remove_friend"
+        android:textSize="20dp"/>
     <EditText
         android:id="@+id/remove_friend_name"
         android:layout_width="match_parent"
