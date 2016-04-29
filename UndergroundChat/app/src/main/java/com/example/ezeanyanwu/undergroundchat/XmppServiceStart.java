@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionConfiguration;
@@ -309,10 +310,21 @@ public class XmppServiceStart extends IntentService {
                 prez[1] = split[0];
                 prez[2] = presence.getStatus();
                 Log.d("ROSTER4:","Presence changed: " + presence.getFrom() + " " + presence);
-
-                Intent rosterIntent = new Intent("Presence-Changed");
-                rosterIntent.putExtra("PRESENCE", prez);
-                LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
+                /* If we get a presence changed with type error, we remove the user, if not, we change the presence to its new value */
+                if(prez[0] == "error" )
+                {
+                    String[] userToDelete = new String[1];
+                    userToDelete[0] = prez[1];
+                    Intent rosterIntent = new Intent("User-Inexistent");
+                    rosterIntent.putExtra("ROSTER", userToDelete);
+                    LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
+                }
+                else
+                {
+                    Intent rosterIntent = new Intent("Presence-Changed");
+                    rosterIntent.putExtra("PRESENCE", prez);
+                    LocalBroadcastManager.getInstance(XmppServiceStart.this).sendBroadcast(rosterIntent);
+                }
             }
         });
 
@@ -332,6 +344,8 @@ public class XmppServiceStart extends IntentService {
             e.printStackTrace();
         }
 
+
+
     }
 
     public void deleteFriend(String userID)
@@ -341,6 +355,7 @@ public class XmppServiceStart extends IntentService {
         {
             try {
                 theRoster.removeEntry(entry);
+
             } catch (SmackException.NotLoggedInException e) {
                 e.printStackTrace();
             } catch (SmackException.NoResponseException e) {
@@ -351,6 +366,12 @@ public class XmppServiceStart extends IntentService {
                 e.printStackTrace();
             }
         }
+        else
+        {
+            Toast toast = Toast.makeText(getApplicationContext(),"User " + userID + " is not in you friends list", Toast.LENGTH_SHORT);
+            toast.show();
+        }
+
 
     }
     /* Convenience method to send message */

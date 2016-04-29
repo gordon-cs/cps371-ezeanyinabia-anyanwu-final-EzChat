@@ -29,6 +29,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.chat.ChatManager;
@@ -64,6 +65,7 @@ public class ContactsActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(myAddRosterListener, new IntentFilter("Add-Roster-List"));
         LocalBroadcastManager.getInstance(this).registerReceiver(myDeleteRosterListener, new IntentFilter("Delete-Roster-List"));
         LocalBroadcastManager.getInstance(this).registerReceiver(myPresenceChangedListener, new IntentFilter("Presence-Changed"));
+        LocalBroadcastManager.getInstance(this).registerReceiver(myUserInexistentListener, new IntentFilter("User-Inexistent"));
     }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -157,11 +159,19 @@ public class ContactsActivity extends AppCompatActivity {
             String[] usernames = intent.getStringArrayExtra("ROSTER");
             for(String user: usernames)
             {
-                if(!contactsArrayList.contains(user))
+                SingleContactListing contact = new SingleContactListing(user, "");
+
+                if(!contactsArrayList.contains(contact))
                 {
-                    SingleContactListing contact = new SingleContactListing(user, "unavailable");
                     contactsArrayList.add(contact);
                     myService.addFriend(user);
+                    Toast toast = Toast.makeText(getApplicationContext(),"User " + user + " added", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+                else
+                {
+                    Toast toast = Toast.makeText(getApplicationContext(),"User " + user + " is already in your friends list", Toast.LENGTH_SHORT);
+                    toast.show();
                 }
             }
             contactsArrayAdapter.notifyDataSetChanged();
@@ -183,7 +193,14 @@ public class ContactsActivity extends AppCompatActivity {
 
                     contactsArrayList.remove(i);
                     myService.deleteFriend(user);
+                    Toast toast = Toast.makeText(getApplicationContext(),"User " + user + " deleted", Toast.LENGTH_SHORT);
+                    toast.show();
 
+                }
+                else
+                {
+                    Toast toast = Toast.makeText(getApplicationContext(),"User " + user + " is not in your friends list", Toast.LENGTH_SHORT);
+                    toast.show();
                 }
             }
             contactsArrayAdapter.notifyDataSetChanged();
@@ -209,6 +226,31 @@ public class ContactsActivity extends AppCompatActivity {
         }
     };
 
+    private BroadcastReceiver myUserInexistentListener = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            String[] usernames = intent.getStringArrayExtra("ROSTER");
+            for (String user : usernames) {
+                SingleContactListing contact = new SingleContactListing(user, "");
+
+                int i = contactsArrayList.indexOf(contact);
+
+                if (i >= 0) {
+
+                    contactsArrayList.remove(i);
+                    myService.deleteFriend(user);
+                    Toast toast = Toast.makeText(getApplicationContext(), "User " + user + " does not exist. Deleting...", Toast.LENGTH_SHORT);
+                    toast.show();
+
+                } else {
+                    Toast toast = Toast.makeText(getApplicationContext(), "User " + user + " is not in your friends list", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+            }
+            contactsArrayAdapter.notifyDataSetChanged();
+        }
+    };
     private AdapterView.OnItemClickListener onContactsClick = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
