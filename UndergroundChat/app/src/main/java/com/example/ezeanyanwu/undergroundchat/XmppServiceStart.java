@@ -416,7 +416,10 @@ public class XmppServiceStart extends IntentService {
     {
         return theChatManager;
     }
-
+    public String getUsername()
+    {
+        return username;
+    }
     /* Listener object that is used by startListeningForChats */
     public class ChatMessageListener implements org.jivesoftware.smack.chat.ChatMessageListener
     {
@@ -433,6 +436,8 @@ public class XmppServiceStart extends IntentService {
             {
                 String from = chat.getParticipant();
                 String text = message.getBody().toString();
+                String[] split = from.split("/");
+                from = split[0];
                 Log.d("NEW CHAT:", from + ":" + text);
                 Intent intent = new Intent("Message-Received");
                 intent.putExtra("FROM", from);

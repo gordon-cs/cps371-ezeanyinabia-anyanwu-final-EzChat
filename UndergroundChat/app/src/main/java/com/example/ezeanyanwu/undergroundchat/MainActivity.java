@@ -13,6 +13,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -26,6 +27,11 @@ import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -34,6 +40,7 @@ import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
+    Intent creator;
     /* UI Elements */
     TextView chatDestination;
     EditText chatEditWindow;
@@ -77,6 +84,30 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onDestroy()
     {
+        String filename = myService.getUsername() + ":" + currentUsername;
+        FileOutputStream file = null;
+        String delimiter = "%%";
+        try {
+            file = openFileOutput(filename, Context.MODE_PRIVATE);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        for(Object string : mChatList)
+        {
+            Log.d("OnDestroy:", string.toString());
+            try {
+                file.write(string.toString().getBytes());
+                file.write(delimiter.getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            file.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         unbindService(mConnection);
         super.onDestroy();
     }
@@ -88,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        creator = getIntent();
         chatDestination = (TextView) findViewById(R.id.destination);
         chatEditWindow = (EditText) findViewById(R.id.chat_edittext);
         chatSendButton = (Button) findViewById(R.id.chat_send_button);
@@ -103,12 +135,15 @@ public class MainActivity extends AppCompatActivity {
         /* Register a listener for the "Send" button */
         chatSendButton.setOnClickListener(sendButtonPressed);
 
+
+        currentUsername = creator.getStringExtra("USERNAME");
+        chatDestination.setText(currentUsername);
+
         /* Prepare and intent and bind to the XmppServiceStart classs */
         Intent intent = new Intent(this, XmppServiceStart.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 
-        Intent creator = getIntent();
-        currentUsername = creator.getStringExtra("USERNAME");
+
 
 
     }
@@ -123,7 +158,6 @@ public class MainActivity extends AppCompatActivity {
             String text = intent.getStringExtra("TEXT");
             if ( from.equals(currentUsername) )
             {
-                chatDestination.setText(from);
                 String updateString = from + ": " + text + "\n";
                 mChatList.add(updateString);
                 mArrayAdapter.notifyDataSetChanged();
@@ -145,6 +179,67 @@ public class MainActivity extends AppCompatActivity {
             myChatManager = myService.getChatManager();
             myRoster = myService.getRoster();
 
+            ByteArrayOutputStream a = new ByteArrayOutputStream();
+            FileInputStream file = null;
+            String filename = myService.getUsername() + ":" + currentUsername;
+            try {
+                file = openFileInput(filename);
+                int i = 0;
+                int counter = 0;
+                try {
+                    if (file != null) {
+                        i = file.read();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                while(i != -1)
+                {
+                    a.write(i);
+                    try {
+                        if (file != null) {
+                            i = file.read();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    counter++;
+                }
+                String contents = a.toString().trim();
+                String[] chat = contents.split("%%");
+                Log.d("Contents:", contents);
+
+                for(String string: chat)
+                {
+                    mChatList.add(string);
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                FileOutputStream newFile = null;
+                try {
+                    newFile = openFileOutput(filename, Context.MODE_PRIVATE);
+                } catch (FileNotFoundException e1) {
+                    e1.printStackTrace();
+                }
+                try {
+                    newFile.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+
+            mArrayAdapter.notifyDataSetChanged();
+            chatListview.setSelection(mArrayAdapter.getCount() - 1);
+
+            if(creator.getStringExtra("TEXT") != null)
+            {
+                Log.d("HERE!:", "HERE LOLE");
+                String text = creator.getStringExtra("TEXT");
+                String updateString = currentUsername + ": " + text + "\n";
+                mChatList.add(updateString);
+                mArrayAdapter.notifyDataSetChanged();
+                chatListview.setSelection(mArrayAdapter.getCount() - 1);
+            }
             isBound = true;
         }
 
@@ -163,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
             chatEditWindow.setText("");
             String threadID = myService.getChat(currentUsername);
             myService.sendChat(text, threadID);
-            String updateString = "eze@gordon.com: " + text + "\n";
+            String updateString = "Me: " + text + "\n";
             mChatList.add(updateString);
             mArrayAdapter.notifyDataSetChanged();
             chatListview.setSelection(mArrayAdapter.getCount() - 1);

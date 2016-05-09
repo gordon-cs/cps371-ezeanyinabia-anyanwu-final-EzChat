@@ -61,6 +61,7 @@ public class ContactsActivity extends AppCompatActivity {
     public void onResume()
     {
         super.onResume();
+        LocalBroadcastManager.getInstance(this).registerReceiver(myIMListener, new IntentFilter("Message-Received"));
         LocalBroadcastManager.getInstance(this).registerReceiver(myInitialRosterListener, new IntentFilter("Initial-Roster-List"));
         LocalBroadcastManager.getInstance(this).registerReceiver(myAddRosterListener, new IntentFilter("Add-Roster-List"));
         LocalBroadcastManager.getInstance(this).registerReceiver(myDeleteRosterListener, new IntentFilter("Delete-Roster-List"));
@@ -139,6 +140,21 @@ public class ContactsActivity extends AppCompatActivity {
 
     };
     /* A Broadcaast Receiver to get contents of incoming chat */
+    private BroadcastReceiver myIMListener = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(hasWindowFocus()) {
+                String from = intent.getStringExtra("FROM");
+                String text = intent.getStringExtra("TEXT");
+
+                Intent a = new Intent(ContactsActivity.this, MainActivity.class);
+                a.putExtra("USERNAME", from);
+                a.putExtra("TEXT", text);
+                startActivity(a);
+            }
+
+        }
+    };
     private BroadcastReceiver myInitialRosterListener = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {

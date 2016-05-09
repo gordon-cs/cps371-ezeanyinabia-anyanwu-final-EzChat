@@ -12,7 +12,8 @@
     android:orientation="vertical"
     tools:context="com.example.ezeanyanwu.undergroundchat.MainActivity"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:showIn="@layout/activity_main">
+    tools:showIn="@layout/activity_main"
+    android:background="#FFFFFF">
 
     <TextView
         android:layout_width="wrap_content"
@@ -28,11 +29,11 @@
     <ListView android:id="@+id/chat_list_view"
         android:layout_width="match_parent"
         android:layout_height="200dp"/>
-
     <EditText android:id="@+id/chat_edittext"
         android:layout_width="match_parent"
         android:layout_height="40dp"
-        android:hint="@string/message_default_text" />
+        android:hint="@string/message_default_text"
+        android:textColor="#14000000"/>
 
     <Button android:id="@+id/chat_send_button"
         android:layout_width="wrap_content"

@@ -11,21 +11,14 @@
     android:weightSum="1">
 
 
-    <TextView
-        android:id="@+id/contacts_header"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:text="@string/friends"
-        android:layout_weight="0.10"
-        android:textSize="25sp"
-        android:gravity="center"/>
-
     <ListView
         android:id="@+id/contacts"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.67"
-        android:longClickable="true"/>
+        android:longClickable="true"
+        android:headerDividersEnabled="true"
+        android:paddingLeft="16dp" />
 
 </LinearLayout>
 
